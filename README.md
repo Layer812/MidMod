@@ -15,7 +15,7 @@ MidModの中心は画面ではなく、再利用可能な **MidiEngine API** で
 
 ### 配布
 
-Share code:
+Share code: [M5Burner](https://docs.m5stack.com/en/uiflow/m5burner/intro)
 
 ```text
 vIuaTI80mgnVrSKo
@@ -255,7 +255,7 @@ The current reference implementation runs on **M5Stack Cardputer + Unit Synth (S
 
 ### Distribution
 
-Share code:
+Share code: [M5Burner](https://docs.m5stack.com/en/uiflow/m5burner/intro)
 
 ```text
 vIuaTI80mgnVrSKo
