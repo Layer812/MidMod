@@ -1,0 +1,6 @@
+{
+  "name": "MidiSmfBridge",
+  "version": "0.1.0",
+  "description": "Generic split-SysEx to raw-MIDI bridge for SMF callback sources",
+  "build": { "srcDir": "src" }
+}

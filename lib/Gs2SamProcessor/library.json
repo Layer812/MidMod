@@ -1,0 +1,9 @@
+{
+  "name": "Gs2SamProcessor",
+  "version": "0.1.0",
+  "description": "GS semantic retargeting processor for SAM2695, pluggable into MidiEngine",
+  "dependencies": {
+    "MidiEngine": "*"
+  },
+  "build": { "srcDir": "src" }
+}

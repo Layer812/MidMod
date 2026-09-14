@@ -1,0 +1,6 @@
+{
+  "name": "MidiPlaybackApi",
+  "version": "0.1.0",
+  "description": "Portable UI/control boundary for MIDI playback and emulator sources",
+  "build": { "srcDir": "src" }
+}

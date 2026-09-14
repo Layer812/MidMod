@@ -1,0 +1,28 @@
+# PlatformIO / build output
+.pio/
+.pioenvs/
+.piolibdeps/
+build/
+*.bin
+*.elf
+*.map
+*.hex
+*.log
+
+# Editors / IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# OS noise
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Python
+__pycache__/
+*.pyc
+
+# Local release/staging output
+release/
+dist/

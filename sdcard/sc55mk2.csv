@@ -1,0 +1,56 @@
+# SC-55mkII / GS
+# GS2SAM_PROFILE,1
+# One source profile = one CSV. Program numbers are human/manual style 1..128.
+# Bank and note numbers are MIDI values 0..127.
+# tone columns after dst_pc: vib_rate,vib_depth,vib_delay,cutoff,resonance,attack,decay,release
+meta,name,SC-55mkII
+meta,source,Roland SC-55mkII GS
+meta,target,SAM2695
+meta,status,validated R4A4 mappings
+config,rhythm_volume_percent,88
+config,pass_unknown_sysex,1
+config,pass_malformed_sysex,1
+config,capital_tone_fallback,1
+config,drum_fallback,1
+config,drum_retarget,1
+config,emulate_shared_drum_maps,1
+config,emulate_drum_rx,1
+config,emulate_key_range,1
+# type,src_msb,src_lsb,src_pc,dst_bank,dst_pc,vib_rate,vib_depth,vib_delay,cutoff,resonance,attack,decay,release,label
+tone,8,*,5,127,4,,,,,,,,,Detuned EP 1 -> SAM Detuned EP1
+tone,8,*,6,127,7,,,,,,,,,Detuned EP 2 -> SAM Detuned EP2
+tone,8,*,7,127,18,,,,,,,,,Coupled Hps. -> SAM Coupled Hps.
+tone,8,*,17,127,12,,,,,,,,,Detuned Or.1 -> SAM Detuned Or.1
+tone,8,*,20,127,13,,,,,,,,,Church Org.2 -> SAM Church Org.2
+tone,8,*,28,127,62,,,,,,,,,Chorus Gt. -> SAM Chorus Gt.
+tone,8,*,29,127,63,,,,,,,,,Funk Gt. -> SAM Funk Gt.
+tone,8,*,39,127,31,,,,,,,,,Synth Bass 3 -> SAM Synth Bass3
+tone,8,*,40,127,32,,,,,,,,,Synth Bass 4 -> SAM Synth Bass4
+tone,1,*,61,127,93,,,,,,,,,Fr. Horn -> SAM French Horn
+tone,8,*,62,127,97,,,,,,,,,Brass 2 -> SAM Brass 2
+tone,8,*,63,127,27,,,,,,,,,Synth Brass3 -> SAM Synth Brass3
+tone,8,*,64,127,28,,,,,,,,,Synth Brass4 -> SAM Synth Brass4
+tone,1,*,81,127,48,,,,,,,,,Square -> SAM Square Wave
+tone,1,*,82,127,45,,,,,,,,,Saw -> SAM Saw Wave
+tone,8,*,108,127,107,,,,,,,,,Taisho Koto -> SAM Taisho Koto
+tone,8,*,116,127,121,,,,,,,,,Castanets -> SAM Castanets
+tone,1,*,123,0,97,,,,,,,,,Rain -> GM FX1 rain
+# type,src_pc,dst_pc,flags,label
+drumkit,1,1,0,STANDARD -> STANDARD
+drumkit,9,1,0,ROOM -> STANDARD
+drumkit,17,17,0,POWER -> POWER
+drumkit,25,17,0,ELECTRONIC -> POWER plus note remap
+drumkit,26,1,0,TR-808 -> STANDARD approximation
+drumkit,33,1,0,JAZZ -> STANDARD
+drumkit,41,41,0,BRUSH -> BRUSH
+drumkit,49,49,0,ORCHESTRA -> ORCHESTRA
+drumkit,57,128,drop_unmapped,SFX -> CM-64/32 sparse exact names
+drumkit,128,128,0,CM-64/32 -> CM-64/32
+# type,src_pc,src_note,dst_note,label
+drumnote,25,38,40,Electronic Elec SD -> Snare Drum 2
+drumnote,25,40,38,Electronic Gated SD -> Power Gated Snare
+drumnote,57,58,82,SFX Applause -> CM Applauses
+drumnote,57,70,94,SFX Helicopter -> CM Helicopter
+drumnote,57,72,96,SFX Gun Shot -> CM Gun Shot
+drumnote,57,78,102,SFX Birds -> CM Birds
+drumnote,57,82,106,SFX Seashore -> CM SeaShore

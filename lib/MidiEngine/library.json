@@ -1,0 +1,6 @@
+{
+  "name": "MidiEngine",
+  "version": "0.1.0",
+  "description": "Portable name-neutral MIDI processing/output boundary with visualization state",
+  "build": { "srcDir": "src" }
+}
