@@ -11,6 +11,7 @@ extern "C" {
  * 1152 tone rules is enough for a large SC-88Pro-style remap table while
  * keeping ESP32-S3 RAM use predictable. */
 #define GS2SAM_CSV_MAX_TONE_RULES 1152u
+#define GS2SAM_CSV_MAX_TONE_FAMILY_RULES 128u
 #define GS2SAM_CSV_MAX_DRUM_KIT_RULES 128u
 #define GS2SAM_CSV_MAX_DRUM_NOTE_RULES 512u
 #define GS2SAM_CSV_META_LEN 48u
@@ -36,6 +37,8 @@ typedef struct gs2sam_csv_profile {
 
     gs2sam_tone_rule_t tone_rules[GS2SAM_CSV_MAX_TONE_RULES];
     size_t tone_rule_count;
+    gs2sam_tone_family_rule_t tone_family_rules[GS2SAM_CSV_MAX_TONE_FAMILY_RULES];
+    size_t tone_family_rule_count;
     gs2sam_drum_kit_rule_t drum_kit_rules[GS2SAM_CSV_MAX_DRUM_KIT_RULES];
     size_t drum_kit_rule_count;
     gs2sam_drum_note_rule_t drum_note_rules[GS2SAM_CSV_MAX_DRUM_NOTE_RULES];

@@ -358,6 +358,19 @@ static void printStats()
     (unsigned long)st->native_pass, (unsigned long)st->exact_translate,
     (unsigned long)st->approximated, (unsigned long)st->unsupported,
     (unsigned long)g_player.sysexResyncs());
+  Serial.printf("[MAP] tone_exact=%lu tone_wild=%lu family=%lu capital=%lu tone_rules=%lu "
+                "drum_direct=%lu drum_retarget=%lu drum_fallback=%lu drumkit_rules=%lu drumnote_rules=%lu\n",
+    (unsigned long)st->tone_exact_lsb_hits, (unsigned long)st->tone_wildcard_lsb_hits,
+    (unsigned long)st->tone_family_fallbacks, (unsigned long)st->tone_fallbacks,
+    (unsigned long)st->profile_tone_rule_hits, (unsigned long)st->drum_kit_direct,
+    (unsigned long)st->drum_kit_retargets, (unsigned long)st->drum_fallbacks,
+    (unsigned long)st->profile_drum_kit_rule_hits, (unsigned long)st->profile_drum_note_rule_hits);
+  Serial.printf("[MAP] fanout=%lu key_suppress=%lu key_conflict=%lu sysex_unknown_bytes=%lu "
+                "sysex_malformed_bytes=%lu emit_cb=%lu emit_max=%lu\n",
+    (unsigned long)st->drum_map_fanouts, (unsigned long)st->key_range_filtered,
+    (unsigned long)st->key_range_conflicts, (unsigned long)st->unknown_sysex_passthrough_bytes,
+    (unsigned long)st->malformed_sysex_passthrough_bytes,
+    (unsigned long)st->emit_callbacks, (unsigned long)st->emit_max_callback_bytes);
 }
 
 static bool startSelected()

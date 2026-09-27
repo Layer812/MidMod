@@ -9,6 +9,7 @@ extern "C" {
 
 /* Conservative, high-confidence SC-55mkII variation retargets. */
 const gs2sam_tone_rule_t *gs2sam_sc55mk2_tone_rules(size_t *count);
+const gs2sam_tone_family_rule_t *gs2sam_sc55mk2_tone_family_rules(size_t *count);
 
 /* R3 drum retarget profile. MIDI program numbers are zero-based.
  * Source SC-55mkII kits: 1/9/17/25/26/33/41/49/57/128.

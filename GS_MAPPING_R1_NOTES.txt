@@ -1,0 +1,78 @@
+MidMod GS MAPPING R1
+2026-09-27
+
+Purpose
+=======
+Correct GS mapping without changing MIDI timing, UART pacing, or playback scheduling.
+
+Core fixes
+==========
+1. Tone lookup is now deterministic and map-aware:
+   exact (MSB, LSB, PC)
+   -> wildcard (MSB, *, PC)
+   -> native SAM Bank 0/127 pass-through
+   -> profile-local family fallback
+   -> GM Capital Tone fallback
+
+2. Exact LSB always wins over wildcard even when the wildcard row appears first.
+   This prevents SC-88Pro Native map (CC32/LSB=3) from being captured by
+   legacy SC-55 wildcard rules.
+
+3. Added profile-local `family` CSV rows:
+     family,src_pc,dst_bank,dst_pc,label
+   SC-55mkII includes 12 conservative family fallbacks.
+   SC-88Pro intentionally contains no family rows so it does not inherit
+   SC-55 substitutions on Native-map misses.
+
+4. Built-in SC-55 profile updated to the Production V5 mapping set used by
+   the X68K MidMod integration, including explicit known variations and
+   family fallbacks.
+
+5. Mapping telemetry added:
+   - exact-LSB tone rule hits
+   - wildcard-LSB tone rule hits
+   - family and Capital Tone fallback counts
+   - profile tone/drum-kit/drum-note rule hits
+   - drum direct / retarget / fallback counts
+   - shared-map fanout
+   - key-range suppression/conflicts
+   - unknown/malformed SysEx pass-through byte cost
+   - output callback count / max callback byte burst
+
+6. Unknown/malformed SysEx remains pass-through by default. Malformed
+   incomplete SysEx now respects pass_malformed_sysex.
+
+Intentionally unchanged / unresolved
+====================================
+- PLAY NOTE NUMBER (41 m1 rr): preserved, not guessed.
+- Assign Group (41 m3 rr): preserved, not guessed.
+- MIDI timing / UART pacing / SMF scheduling are unchanged.
+
+SC-88Pro device test
+====================
+Copy sdcard/sc55mk2.csv, sdcard/sc88pro.csv and
+sdcard/SC88PRO_TONE_TEST.mid to the SD root.
+
+Press P to select SC-88Pro / GS and play SC88PRO_TONE_TEST.mid.
+The first three sections use LSB3 Native and must NOT receive the legacy
+SC-55 substitutions. Section 6 uses LSB2 and must use the explicit SC-88
+Synth Brass 3 mapping.
+
+Host validation performed
+=========================
+Strict C flags:
+  -std=c11 -Wall -Wextra -Werror -Wpedantic -Wconversion -Wsign-conversion
+
+PASS:
+- strict compile of Gs2SamProcessor, MidiEngine, MidiPlaybackApi,
+  MidiSmfBridge
+- test_bank_lsb_profile
+- test_profile_csv (including malformed family-row rejection)
+- test_gs2sam_rhythm_trim
+- test_sc88pro_profile_switch
+- test_gs_mapping_r1
+- test_sc88pro_map_matrix (all six README sections)
+- tools/validate_profiles.py
+- tools/source_qa.py
+
+No hardware/audio validation was performed in this environment.

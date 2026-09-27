@@ -1,0 +1,55 @@
+MidMod GS MAPPING R2
+2026-09-27
+
+Purpose
+=======
+Integrate the supplied SC55 Production V6 full mapping into R1 without
+changing MIDI timing, UART pacing, or playback scheduling.
+
+What changed from R1
+====================
+1. SC55 melodic map is now the full 220-rule set:
+   - 128 explicit Bank-MSB 127 (MT-32-map) program remaps
+   - 92 documented SC-55/SC-55mkII GS variation mappings
+
+2. The supplied 92 non-Bank127 variation rows were compared against the R1
+   built-in Production mapping and are identical as a set (92/92).
+   Therefore R2 adds the missing 128 Bank127 rules rather than changing the
+   established 92 variation semantics.
+
+3. The built-in SC55 profile and sdcard/sc55mk2.csv now carry the same
+   220-rule melodic policy. Profile-local fallbacks remain:
+   - 12 family rules
+   - 10 drum-kit rules
+   - 7 drum-note rules
+
+4. Bank127 profile rules intentionally run before native Bank127 passthrough.
+   This matters because the source SC55/MT-32-map program layout is not assumed
+   to be byte-for-byte identical to the SAM2695 Bank127 layout.
+
+5. The supplied CSV's first display comment said "Production V5 full built-in
+   equivalent" while its meta,status line described "Production V6".
+   R2 changes only that display comment to "Production V6 full map"; mapping
+   rows are preserved.
+
+Unchanged from R1
+=================
+- exact (MSB,LSB,PC) wins over wildcard (MSB,*,PC)
+- SC-88Pro remains LSB/Sound-Map aware
+- SC-88Pro has no SC55 family inheritance
+- PLAY NOTE NUMBER (41 m1 rr) remains preserved/unresolved
+- Assign Group (41 m3 rr) remains preserved/unresolved
+- MIDI timing / UART pacing / SMF scheduling are unchanged
+
+Validation
+==========
+PASS profile CSV validation
+PASS SC55 full-profile structural validation:
+  tone=220, Bank127=128, variation=92, family=12, drumkit=10, drumnote=7
+  220 unique source tone keys
+  Bank127 source programs cover 1..128 exactly once
+PASS strict C compile and runtime test of built-in full map
+PASS strict C compile and runtime test of CSV loader with all 220 rules
+PASS GS Mapping R1 core test
+
+No hardware/audio validation was performed in this environment.

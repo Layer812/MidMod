@@ -18,7 +18,7 @@ MidModの中心は画面ではなく、再利用可能な **MidiEngine API** で
 Share code: [M5Burner](https://docs.m5stack.com/en/uiflow/m5burner/intro)
 
 ```text
-vIuaTI80mgnVrSKo
+gr6t7swlj4yddjXs
 ```
 
 ### 必要なもの
@@ -31,8 +31,8 @@ vIuaTI80mgnVrSKo
 ### 主な機能
 
 - SMF (`.mid`) 再生
-- GS → SAM2695 セマンティック変換
-- SC-55mkII / SC-88Pro CSVプロファイル
+- MIDIデータ → SAM2695 向けの変換・補正
+- 編集可能なCSVマッピングプロファイル
 - CSVによる音色／ドラムmappingの追加・編集
 - GS SysEx、CC、RPN/NRPNの一部変換
 - Master Volume制御
@@ -94,9 +94,9 @@ midmodSampleInitSynthUart(MIDMOD_SYNTH_RX_PIN, MIDMOD_SYNTH_TX_PIN);
 ルート例:
 
 ```text
-/sc55mk2.csv
-/sc88pro.csv
-/SC88PRO_TONE_TEST.mid
+/profile_a.csv
+/profile_b.csv
+/TONE_TEST.mid
 /日本語の曲名.mid
 ```
 
@@ -106,7 +106,7 @@ SDが `E:` の場合:
 INSTALL_SD_FILES.bat E:
 ```
 
-起動時は `sc55mk2.csv` を優先します。ファイラーで `P` を押すと有効なCSVプロファイルを切り替えられます。
+起動時は既定のCSVプロファイルを優先します。ファイラーで `P` を押すと有効なCSVプロファイルを切り替えられます。
 
 ### 操作
 
@@ -138,8 +138,8 @@ INSTALL_SD_FILES.bat E:
 1音源につき1 CSVです。
 
 ```text
-sc55mk2.csv
-sc88pro.csv
+profile_a.csv
+profile_b.csv
 my_module.csv
 ```
 
@@ -197,7 +197,7 @@ midi_engine_t engine;
 midi_engine_init(&engine, &backend, 32);
 ```
 
-processorを付けなければpass-throughです。SAM2695向けGS変換が必要な場合だけ `Gs2SamProcessor` を追加します。
+processorを付けなければpass-throughです。SAM2695向けにMIDIデータを変換・補正したい場合だけ `Gs2SamProcessor` を追加します。
 
 ```c
 gs2sam_processor_t gs;
@@ -258,7 +258,7 @@ The current reference implementation runs on **M5Stack Cardputer + Unit Synth (S
 Share code: [M5Burner](https://docs.m5stack.com/en/uiflow/m5burner/intro)
 
 ```text
-vIuaTI80mgnVrSKo
+gr6t7swlj4yddjXs
 ```
 
 ### Hardware
@@ -271,8 +271,8 @@ vIuaTI80mgnVrSKo
 ### Features
 
 - SMF playback
-- GS → SAM2695 retargeting
-- Editable SC-55mkII / SC-88Pro CSV profiles
+- MIDI retargeting / adjustment for SAM2695
+- Editable CSV mapping profiles
 - Selected GS SysEx, CC, RPN/NRPN and drum translations
 - UTF-8 Japanese filenames/folders
 - Amber browser/player sample UI
@@ -339,7 +339,7 @@ midi_engine_feed_byte(&engine, midi_byte);
 
 `MidiEngine` is transport-neutral. Its backend may write to UART, USB MIDI, BLE MIDI, a queue, or an emulator-internal target.
 
-Without a processor it is pass-through. Install `Gs2SamProcessor` only when GS → SAM2695 conversion is required.
+Without a processor it is pass-through. Install `Gs2SamProcessor` only when MIDI retargeting / adjustment for SAM2695 is required.
 
 ```text
 MIDI source / emulator

@@ -77,7 +77,33 @@ tone,8,1,63,127,27,,,,,,,,,Synth Brass 3 [SC-55 map]
 tone,8,2,63,127,27,,,,,,,,,Synth Brass 3 [SC-88 map]
 ```
 
-### 4. drumkit — ドラムセット変換
+同じ `MSB + PC` に exact LSB 行と `*` 行が両方ある場合は、CSV上の並び順に関係なく **exact LSB が必ず優先**されます。SC-88ProではCC#32/LSBをSound Map identityの一部として扱うため、Native map (`LSB=3`) がSC-55 wildcardへ誤って落ちないようにします。
+
+音色解決順は次です。
+
+1. exact `MSB + LSB + PC`
+2. wildcard `MSB + * + PC`
+3. SAM2695でnativeなBank 0 / 127のpass-through
+4. profileの `family` fallback
+5. GM Capital Tone fallback
+
+### 4. family — 音色ファミリfallback
+
+形式:
+
+```text
+family,src_pc,dst_bank,dst_pc,label
+```
+
+例:
+
+```csv
+family,39,127,29,Synth Bass 1 -> Synth Bass1
+```
+
+`family` は exact/wildcard tone ruleがなく、source bankがnative Bank 0/127でもない場合だけ参照されます。SC-88Proのように別Sound Mapの置換を継承したくないprofileでは、family行を置かないでください。
+
+### 5. drumkit — ドラムセット変換
 
 形式:
 
@@ -99,7 +125,7 @@ drumkit,57,128,drop_unmapped,SFX sparse mapping
 - `0`: 通常
 - `drop_unmapped`: `drumnote` に定義されていない音を出さない
 
-### 5. drumnote — ドラムノート変換
+### 6. drumnote — ドラムノート変換
 
 形式:
 
@@ -118,7 +144,7 @@ drumnote,57,70,94,SFX Helicopter -> CM Helicopter
 - `src_note`: 元MIDI Note。0..127
 - `dst_note`: 出力MIDI Note。0..127、または `drop`
 
-### 6. config — 変換方針
+### 7. config — 変換方針
 
 現在使える主な項目:
 
@@ -138,7 +164,7 @@ bool値は `1/0`, `true/false`, `on/off`, `yes/no` を使えます。
 
 `rhythm_volume_percent` は0..200です。現在の付属profileは88%です。
 
-### 7. meta — 説明情報
+### 8. meta — 説明情報
 
 ```csv
 meta,name,SC-88Pro
@@ -149,7 +175,7 @@ meta,status,curated test map
 
 `name/source/target/status` は説明用です。
 
-### 8. 作り方のおすすめ
+### 9. 作り方のおすすめ
 
 新しい音源profileは、まず既存CSVをコピーしてください。
 
@@ -167,7 +193,7 @@ sc88pro.csv -> my_module.csv
 
 大量の推測mappingを一度に入れるより、確認できたmappingだけ増やす方針を推奨します。
 
-### 9. エラー時
+### 10. エラー時
 
 認識済み行に不正な数値や形式があるCSVは、途中まで適用せず**profile全体を拒否**します。
 シグネチャがないCSVもprofileとして採用しません。
@@ -202,6 +228,16 @@ tone,src_msb,src_lsb,src_pc,dst_bank,dst_pc,vib_rate,vib_depth,vib_delay,cutoff,
 - `src_lsb`: 0..127 or `*`
 - optional modifiers: -64..63
 - label: documentation only
+
+Exact LSB rules always beat wildcard-LSB rules regardless of CSV row order. Tone resolution is exact tone -> wildcard tone -> native Bank 0/127 -> profile family fallback -> GM Capital Tone fallback.
+
+### Family fallback rule
+
+```text
+family,src_pc,dst_bank,dst_pc,label
+```
+
+Family rules are profile-local and are consulted only for non-native source banks after tone rules fail. Profiles such as SC-88Pro may intentionally define no family rows to avoid inheriting SC-55 substitutions.
 
 ### Drum kit rule
 

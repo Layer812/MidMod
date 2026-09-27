@@ -50,6 +50,16 @@ typedef struct gs2sam_tone_rule {
     uint8_t src_bank_lsb;      /* 0..127, or GS2SAM_BANK_LSB_ANY */
 } gs2sam_tone_rule_t;
 
+/* Ordered fallback for an unsupported GS variation bank. Exact tone
+ * rules always win; target-native banks 0/127 pass through; this family map
+ * is consulted only for remaining non-native bank values before generic
+ * GM-capital fallback. */
+typedef struct gs2sam_tone_family_rule {
+    uint8_t src_program;       /* source MIDI program, 0..127 */
+    uint8_t dst_bank_msb;      /* target bank, normally 127 */
+    uint8_t dst_program;       /* target MIDI program, 0..127 */
+} gs2sam_tone_family_rule_t;
+
 typedef struct gs2sam_drum_kit_rule {
     uint8_t src_program;       /* MIDI program, zero-based */
     uint8_t dst_program;       /* SAM2695 drum program, zero-based */
@@ -98,6 +108,8 @@ typedef struct gs2sam_config {
 
     const gs2sam_tone_rule_t *tone_rules;
     size_t tone_rule_count;
+    const gs2sam_tone_family_rule_t *tone_family_rules;
+    size_t tone_family_rule_count;
     const gs2sam_drum_kit_rule_t *drum_kit_rules;
     size_t drum_kit_rule_count;
     const gs2sam_drum_note_rule_t *drum_note_rules;
@@ -114,8 +126,19 @@ typedef struct gs2sam_stats {
     uint32_t approximated;
     uint32_t unsupported;
     uint32_t malformed_sysex;
-    uint32_t tone_fallbacks;
+    uint32_t tone_fallbacks;              /* GM Capital Tone fallback */
+    uint32_t tone_family_fallbacks;       /* semantic family fallback */
+    uint32_t tone_exact_lsb_hits;         /* exact MSB+LSB+PC rule */
+    uint32_t tone_wildcard_lsb_hits;      /* legacy MSB+*+PC rule */
+    uint32_t profile_tone_rule_hits;
     uint32_t drum_fallbacks;
+    uint32_t drum_kit_direct;
+    uint32_t profile_drum_kit_rule_hits;
+    uint32_t profile_drum_note_rule_hits;
+    uint32_t unknown_sysex_passthrough_bytes;
+    uint32_t malformed_sysex_passthrough_bytes;
+    uint32_t emit_callbacks;
+    uint32_t emit_max_callback_bytes;
     uint32_t map2_collapses;
     uint32_t tone_sysex_translates;
     uint32_t tone_modify_translates;

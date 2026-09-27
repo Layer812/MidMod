@@ -17,6 +17,9 @@ static void emit_raw(gs2sam_t *s, const uint8_t *p, size_t n)
     if (!n || !s->cfg.emit) return;
     s->cfg.emit(s->cfg.emit_user, p, n);
     s->stats.bytes_out += (uint32_t)n;
+    s->stats.emit_callbacks++;
+    if (n > s->stats.emit_max_callback_bytes)
+        s->stats.emit_max_callback_bytes = (uint32_t)n;
 }
 
 static void emit1(gs2sam_t *s, uint8_t a)
@@ -221,7 +224,7 @@ static const gs2sam_drum_note_rule_t *find_drum_note_rule(const gs2sam_t *s,
 
 /* Returns 1 when a target note exists, 0 when the profile intentionally
  * suppresses this source note. */
-static int map_drum_note(const gs2sam_t *s, uint8_t src_program,
+static int map_drum_note(gs2sam_t *s, uint8_t src_program,
                          uint8_t src_note, uint8_t *dst_note, int *remapped)
 {
     const gs2sam_drum_note_rule_t *nr;
@@ -233,6 +236,7 @@ static int map_drum_note(const gs2sam_t *s, uint8_t src_program,
 
     nr = find_drum_note_rule(s, src_program, src_note);
     if (nr) {
+        s->stats.profile_drum_note_rule_hits++;
         if (nr->dst_note == GS2SAM_DRUM_NOTE_DROP) return 0;
         *dst_note = nr->dst_note;
         if (remapped && nr->dst_note != src_note) *remapped = 1;
@@ -380,15 +384,47 @@ static void process_note_message(gs2sam_t *s, uint8_t status,
 static const gs2sam_tone_rule_t *find_tone_rule(const gs2sam_t *s,
                                                  uint8_t bank_msb,
                                                  uint8_t bank_lsb,
-                                                 uint8_t program)
+                                                 uint8_t program,
+                                                 int *exact_lsb)
 {
     size_t i;
+    const gs2sam_tone_rule_t *wildcard = NULL;
+    if (exact_lsb) *exact_lsb = 0;
+
+    /* Exact Sound Map identity must win even when a legacy wildcard row
+     * appears earlier in the profile. This is essential for SC-88Pro, where
+     * CC32 selects SC-55 / SC-88 / Native maps. */
     for (i = 0; i < s->cfg.tone_rule_count; ++i) {
         const gs2sam_tone_rule_t *r = &s->cfg.tone_rules[i];
-        if (r->src_bank_msb == bank_msb && r->src_program == program &&
-            (r->src_bank_lsb == GS2SAM_BANK_LSB_ANY || r->src_bank_lsb == bank_lsb)) return r;
+        if (r->src_bank_msb != bank_msb || r->src_program != program) continue;
+        if (r->src_bank_lsb == bank_lsb) {
+            if (exact_lsb) *exact_lsb = 1;
+            return r;
+        }
+        if (r->src_bank_lsb == GS2SAM_BANK_LSB_ANY && wildcard == NULL)
+            wildcard = r;
+    }
+    return wildcard;
+}
+
+static const gs2sam_tone_family_rule_t *find_tone_family_rule(const gs2sam_t *s,
+                                                               uint8_t program)
+{
+    size_t i;
+    for (i = 0; i < s->cfg.tone_family_rule_count; ++i) {
+        const gs2sam_tone_family_rule_t *r = &s->cfg.tone_family_rules[i];
+        if (r->src_program == program) return r;
     }
     return NULL;
+}
+
+static void emit_tone_family_rule(gs2sam_t *s, uint8_t ch,
+                                  const gs2sam_tone_family_rule_t *r)
+{
+    if (s->target_bank_msb[ch] != r->dst_bank_msb)
+        emit_cc(s, ch, 0, r->dst_bank_msb);
+    emit_pc(s, ch, r->dst_program);
+    s->target_bank_msb[ch] = r->dst_bank_msb;
 }
 
 static void emit_tone_rule(gs2sam_t *s, uint8_t ch, const gs2sam_tone_rule_t *r)
@@ -414,7 +450,7 @@ static uint8_t sam_native_drum_program(uint8_t pc)
     return (pc == 0 || pc == 16 || pc == 40 || pc == 48 || pc == 127);
 }
 
-static uint8_t drum_target_program(const gs2sam_t *s, uint8_t src_pc,
+static uint8_t drum_target_program(gs2sam_t *s, uint8_t src_pc,
                                    int *retargeted, int *fallback)
 {
     const gs2sam_drum_kit_rule_t *r = NULL;
@@ -423,6 +459,7 @@ static uint8_t drum_target_program(const gs2sam_t *s, uint8_t src_pc,
 
     if (s->cfg.drum_retarget) r = find_drum_kit_rule(s, src_pc);
     if (r) {
+        s->stats.profile_drum_kit_rule_hits++;
         if (retargeted && r->dst_program != src_pc) *retargeted = 1;
         return r->dst_program;
     }
@@ -470,6 +507,7 @@ static unsigned emit_drum_program_for_map(gs2sam_t *s, uint8_t rmap,
         s->stats.native_pass++;
     }
     if (fallback) s->stats.drum_fallbacks++;
+    if (!retargeted && !fallback) s->stats.drum_kit_direct++;
     return emitted;
 }
 
@@ -485,6 +523,7 @@ static void sync_rhythm_channel(gs2sam_t *s, uint8_t ch, uint8_t rmap)
     if (retargeted) s->stats.approximated++;
     else s->stats.exact_translate++;
     if (fallback) s->stats.drum_fallbacks++;
+    if (!retargeted && !fallback) s->stats.drum_kit_direct++;
 }
 
 static void process_program_change(gs2sam_t *s, uint8_t ch, uint8_t pc)
@@ -505,22 +544,42 @@ static void process_program_change(gs2sam_t *s, uint8_t ch, uint8_t pc)
         return;
     }
 
-    /* A source profile may override even a target-native bank (notably the
-     * SC-55mkII MT-32 bank 127, whose naming/patch layout is not guaranteed
-     * byte-for-byte identical to the SAM2695 bank 127). */
+    /* Profile tone rules are highest priority. Exact MSB+LSB+PC must win
+     * over legacy wildcard-LSB rules regardless of CSV row order. */
     {
-        const gs2sam_tone_rule_t *r = find_tone_rule(s, bank, s->bank_lsb[ch], pc);
+        int exact_lsb = 0;
+        const gs2sam_tone_rule_t *r =
+            find_tone_rule(s, bank, s->bank_lsb[ch], pc, &exact_lsb);
         if (r) {
             emit_tone_rule(s, ch, r);
             s->stats.approximated++;
+            s->stats.profile_tone_rule_hits++;
+            if (exact_lsb) s->stats.tone_exact_lsb_hits++;
+            else s->stats.tone_wildcard_lsb_hits++;
             return;
         }
     }
 
+    /* Only target-native SAM banks pass directly. A profile rule above may
+     * still override bank 127 when the source module's patch layout differs. */
     if (bank == 0 || bank == 127) {
         emit_pc(s, ch, pc);
         s->stats.native_pass++;
         return;
+    }
+
+    /* Profile-specific semantic family fallback comes after native-bank
+     * handling and before generic GM Capital Tone collapse. SC-88Pro profiles
+     * can intentionally omit family rows so Native-map misses do not inherit
+     * SC-55 substitutions. */
+    {
+        const gs2sam_tone_family_rule_t *fr = find_tone_family_rule(s, pc);
+        if (fr) {
+            emit_tone_family_rule(s, ch, fr);
+            s->stats.approximated++;
+            s->stats.tone_family_fallbacks++;
+            return;
+        }
     }
 
     if (s->cfg.capital_tone_fallback) {
@@ -755,11 +814,17 @@ static void process_sysex(gs2sam_t *s, const uint8_t *m, size_t n)
     r = roland_dt1(m, n, &a0, &a1, &a2, &data, &len);
     if (r == -1) {
         s->stats.malformed_sysex++;
-        if (s->cfg.pass_malformed_sysex) emit_raw(s, m, n);
+        if (s->cfg.pass_malformed_sysex) {
+            emit_raw(s, m, n);
+            s->stats.malformed_sysex_passthrough_bytes += (uint32_t)n;
+        }
         return;
     }
     if (r == 0) {
-        if (s->cfg.pass_unknown_sysex) emit_raw(s, m, n);
+        if (s->cfg.pass_unknown_sysex) {
+            emit_raw(s, m, n);
+            s->stats.unknown_sysex_passthrough_bytes += (uint32_t)n;
+        }
         s->stats.unsupported++;
         return;
     }
@@ -912,7 +977,10 @@ static void process_sysex(gs2sam_t *s, const uint8_t *m, size_t n)
         return;
     }
 
-    if (s->cfg.pass_unknown_sysex) emit_raw(s, m, n);
+    if (s->cfg.pass_unknown_sysex) {
+        emit_raw(s, m, n);
+        s->stats.unknown_sysex_passthrough_bytes += (uint32_t)n;
+    }
     s->stats.unsupported++;
 }
 
@@ -927,7 +995,10 @@ static uint8_t channel_data_need(uint8_t status)
 
 static void flush_incomplete_sysex(gs2sam_t *s)
 {
-    if (s->sysex_len) emit_raw(s, s->sysex, s->sysex_len);
+    if (s->sysex_len && s->cfg.pass_malformed_sysex) {
+        emit_raw(s, s->sysex, s->sysex_len);
+        s->stats.malformed_sysex_passthrough_bytes += (uint32_t)s->sysex_len;
+    }
     s->sysex_len = 0;
     s->in_sysex = 0;
     s->sysex_passthrough = 0;
@@ -949,6 +1020,7 @@ void gs2sam_feed(gs2sam_t *s, uint8_t b)
     if (s->in_sysex) {
         if (s->sysex_passthrough) {
             emit1(s, b);
+            s->stats.unknown_sysex_passthrough_bytes++;
             if (b == 0xF7u) {
                 s->in_sysex = 0;
                 s->sysex_passthrough = 0;
@@ -977,9 +1049,11 @@ void gs2sam_feed(gs2sam_t *s, uint8_t b)
             } else {
                 /* Long manufacturer dump: stop buffering and stream it. */
                 emit_raw(s, s->sysex, s->sysex_len);
+                s->stats.unknown_sysex_passthrough_bytes += (uint32_t)s->sysex_len;
                 s->sysex_len = 0;
                 s->sysex_passthrough = 1;
                 emit1(s, b);
+                s->stats.unknown_sysex_passthrough_bytes++;
             }
             return;
         }

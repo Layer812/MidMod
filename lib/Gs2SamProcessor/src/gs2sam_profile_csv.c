@@ -159,6 +159,23 @@ static int parse_tone(gs2sam_csv_profile_t *p, char **f, size_t n)
     return 1;
 }
 
+static int parse_family(gs2sam_csv_profile_t *p, char **f, size_t n)
+{
+    gs2sam_tone_family_rule_t *r;
+    long v;
+    if (n < 4u || p->tone_family_rule_count >= GS2SAM_CSV_MAX_TONE_FAMILY_RULES) return -1;
+    r = &p->tone_family_rules[p->tone_family_rule_count];
+    memset(r, 0, sizeof(*r));
+    if (!parse_long_range(f[1], 1, 128, &v)) return -1;
+    r->src_program = (uint8_t)(v - 1);
+    if (!parse_long_range(f[2], 0, 127, &v)) return -1;
+    r->dst_bank_msb = (uint8_t)v;
+    if (!parse_long_range(f[3], 1, 128, &v)) return -1;
+    r->dst_program = (uint8_t)(v - 1);
+    ++p->tone_family_rule_count;
+    return 1;
+}
+
 static int parse_drumkit(gs2sam_csv_profile_t *p, char **f, size_t n)
 {
     gs2sam_drum_kit_rule_t *r;
@@ -246,6 +263,7 @@ int gs2sam_csv_profile_parse_line(gs2sam_csv_profile_t *p,
     if (strcmp(f[0], "meta") == 0) rc = parse_meta(p, f, n);
     else if (strcmp(f[0], "config") == 0) rc = parse_config(p, f, n);
     else if (strcmp(f[0], "tone") == 0) rc = parse_tone(p, f, n);
+    else if (strcmp(f[0], "family") == 0) rc = parse_family(p, f, n);
     else if (strcmp(f[0], "drumkit") == 0) rc = parse_drumkit(p, f, n);
     else if (strcmp(f[0], "drumnote") == 0) rc = parse_drumnote(p, f, n);
     else {
@@ -283,6 +301,8 @@ void gs2sam_csv_profile_make_config(const gs2sam_csv_profile_t *p,
     cfg->rhythm_volume_percent = p->rhythm_volume_percent;
     cfg->tone_rules = p->tone_rules;
     cfg->tone_rule_count = p->tone_rule_count;
+    cfg->tone_family_rules = p->tone_family_rules;
+    cfg->tone_family_rule_count = p->tone_family_rule_count;
     cfg->drum_kit_rules = p->drum_kit_rules;
     cfg->drum_kit_rule_count = p->drum_kit_rule_count;
     cfg->drum_note_rules = p->drum_note_rules;

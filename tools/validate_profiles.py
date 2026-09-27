@@ -3,8 +3,8 @@ import csv, sys
 root = Path(__file__).resolve().parents[1]
 profdir = root / 'sdcard'
 expected = {
-    'sc55mk2.csv': {'tone':18, 'drumkit':10, 'drumnote':7, 'config':9},
-    'sc88pro.csv': {'tone':50, 'drumkit':10, 'drumnote':7, 'config':9},
+    'sc55mk2.csv': {'tone':220, 'family':12, 'drumkit':10, 'drumnote':7, 'config':9},
+    'sc88pro.csv': {'tone':50, 'family':0, 'drumkit':10, 'drumnote':7, 'config':9},
 }
 for name, want in expected.items():
     p = profdir / name

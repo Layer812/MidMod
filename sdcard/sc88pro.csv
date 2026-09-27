@@ -7,7 +7,7 @@
 meta,name,SC-88Pro
 meta,source,Roland SC-88Pro GS
 meta,target,SAM2695
-meta,status,R5A3 curated test map; LSB0 treated as Native default
+meta,status,GS map-aware R1; LSB exact identity; no SC55 family inheritance
 config,rhythm_volume_percent,88
 config,pass_unknown_sysex,1
 config,pass_malformed_sysex,1
@@ -68,6 +68,7 @@ tone,8,1,5,127,4,,,,,,,,,Detuned EP 1 [SC55 only]
 tone,8,1,29,127,63,,,,,,,,,Funk Gt. [SC55 only]
 tone,8,1,39,127,31,,,,,,,,,Synth Bass 3 [SC55 only]
 tone,8,1,40,127,32,,,,,,,,,Synth Bass 4 [SC55 only]
+# No family rows by design: unsupported SC-88Pro Native-map tones fall back to GM Capital Tone rather than inheriting SC-55 substitutions.
 # Drum fallback/retarget policy. Extra SC-88Pro kits not listed here safely fall back to SAM Standard.
 drumkit,1,1,0,STANDARD -> STANDARD
 drumkit,9,1,0,ROOM -> STANDARD
